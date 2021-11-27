@@ -14,12 +14,14 @@ def scrape_all():
     news_title, news_paragraph = mars_news(browser)
 
     # Run all scraping functions and store results in a dictionary
+
     data = {
         "news_title": news_title,
         "news_paragraph": news_paragraph,
         "featured_image": featured_image(browser),
         "facts": mars_facts(),
-        "last_modified": dt.datetime.now()
+        "last_modified": dt.datetime.now(),
+        "hemispheres": mars_hemisphere(browser)
     }
 
     # Stop webdriver and return data
@@ -97,6 +99,41 @@ def mars_facts():
     # Convert dataframe into HTML format, add bootstrap
     return df.to_html(classes="table table-striped")
 
+  
+
+def mars_hemisphere(browser):
+
+    # Add try/except for error handling
+    url = 'https://marshemispheres.com/'
+    browser.visit(url)
+    html = browser.html
+    image_soup = soup(html, 'html.parser')
+    results = image_soup.find_all('div', class_='item')
+    hemisphere_image_urls = []
+    try:
+        # Use 'read_html' to scrape the facts table into a dataframe
+        
+        for result in results:
+            img_url_rel = result.find('a', class_='itemLink product-item').get('href')
+            img_url_new = f'https://marshemispheres.com/{img_url_rel}'
+            browser.visit(img_url_new)
+            html = browser.html
+            imagelink_soup = soup(html, 'html.parser')
+            findings = imagelink_soup.find_all('a')
+            for finding in findings:
+                if finding.text == 'Sample':
+                    img_url_rel=finding.get('href')
+                    img_url = f'https://marshemispheres.com/{img_url_rel}'
+            
+                    title = result.find('h3').text
+                    hemisphere_image_urls.append({'img_url': img_url, 'title': title})
+    
+    except BaseException:
+        return None
+    return hemisphere_image_urls
+
+    
+    
 if __name__ == "__main__":
 
     # If running as script, print scraped data
